@@ -153,12 +153,12 @@ int main(int argc, char* argv[])
     
     lcd.printf("Version is %f\n", version);
               
-    MQTT::Client<IPStack, Countdown>client = MQTT::Client<IPStack, Countdown>(&ipstack);
+    MQTT::Client<IPStack, Countdown> client = MQTT::Client<IPStack, Countdown>(ipstack);
+    
+    client.setConnectionLostHandler(connect);
 
     MQTT::Client<IPStack, Countdown>::connectionLostInfo info = {&client, &ipstack};
     int rc = connect(&info);
-    
-    client.setConnectionLostHandler(connect);
     
     rc = client.subscribe(topic, MQTT::QOS1, messageArrived);   
     if (rc != 0)
