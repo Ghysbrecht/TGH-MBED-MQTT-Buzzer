@@ -127,38 +127,30 @@ void messageArrived(MQTT::Message* message)
     ++arrivedcount;
 }
 
-int connect(MQTT::Client<IPStack, Countdown>::connectionLostInfo* info)
-{
-    char* hostname = "m2m.eclipse.org";
-    int port = 1883;
-    lcd.printf("Connecting to %s:%d\n", hostname, port);
-    int rc = info->network->connect(hostname, port);
-    lcd.printf("rc from TCP connect is %d\n", rc);
- 
-    MQTTPacket_connectData data = MQTTPacket_connectData_initializer;       
-    data.MQTTVersion = 3;
-    data.clientID.cstring = "mbed-icraggs";
-    rc = info->client->connect(&data);
-    lcd.printf("rc from MQTT connect is %d\n", rc);
-    
-    return rc;
-}
-
 
 int main(int argc, char* argv[])
 {   
     IPStack ipstack = IPStack();
-    float version = 0.3;
+    float version = 0.42;
     char* topic = "mbed-sample";
     
     lcd.printf("Version is %f\n", version);
               
     MQTT::Client<IPStack, Countdown> client = MQTT::Client<IPStack, Countdown>(ipstack);
     
-    client.setConnectionLostHandler(connect);
-
-    MQTT::Client<IPStack, Countdown>::connectionLostInfo info = {&client, &ipstack};
-    int rc = connect(&info);
+    char* hostname = "m2m.eclipse.org";
+    int port = 1883;
+    lcd.printf("Connecting to %s:%d\n", hostname, port);
+    int rc = ipstack.connect(hostname, port);
+    if (rc != 0)
+        lcd.printf("rc from TCP connect is %d\n", rc);
+ 
+    MQTTPacket_connectData data = MQTTPacket_connectData_initializer;       
+    data.MQTTVersion = 3;
+    data.clientID.cstring = "mbed-icraggs";
+    rc = client.connect(&data);
+    if (rc != 0)
+        lcd.printf("rc from MQTT connect is %d\n", rc);
     
     rc = client.subscribe(topic, MQTT::QOS1, messageArrived);   
     if (rc != 0)
