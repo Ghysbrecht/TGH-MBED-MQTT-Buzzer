@@ -24,16 +24,15 @@
  
  */
 
-#include "mbed.h"
-#include "EthernetInterfaceIPStack.h"
 
 #include "C12832.h"
 C12832 lcd(p5, p7, p6, p8, p11);
 
-#include "FP.cpp"
+#include "MQTTEthernet.h"
 #include "MQTTClient.h"
 
 int arrivedcount = 0;
+
 
 void messageArrived(MQTT::Message* message)
 {
@@ -46,17 +45,16 @@ void messageArrived(MQTT::Message* message)
 }
 
 
-
 int main(int argc, char* argv[])
 {   
-    IPStack ipstack = IPStack();
-    float version = 0.43;
+    MQTTEthernet ipstack = MQTTEthernet();
+    float version = 0.46;
     char* topic = "mbed-sample";
     
     lcd.printf("Version is %f\n", version);
     printf("Version is %f\n", version);
               
-    MQTT::Client<IPStack, Countdown> client = MQTT::Client<IPStack, Countdown>(ipstack);
+    MQTT::Client<MQTTEthernet, Countdown> client = MQTT::Client<MQTTEthernet, Countdown>(ipstack);
     
     char* hostname = "m2m.eclipse.org";
     int port = 1883;
@@ -67,15 +65,12 @@ int main(int argc, char* argv[])
  
     MQTTPacket_connectData data = MQTTPacket_connectData_initializer;       
     data.MQTTVersion = 3;
-    data.clientID.cstring = "mbed-icraggs";
-    rc = client.connect(&data);
-    if (rc != 0)
+    data.clientID.cstring = "mbed-sample";
+    if ((rc = client.connect(&data)) != 0)
         lcd.printf("rc from MQTT connect is %d\n", rc);
     
-    rc = client.subscribe(topic, MQTT::QOS1, messageArrived);   
-    if (rc != 0) {
-        printf("rc from MQTT subscribe is %d\n", rc);
-    }
+    if ((rc = client.subscribe(topic, MQTT::QOS1, messageArrived)) != 0)
+        lcd.printf("rc from MQTT subscribe is %d\n", rc);
 
     MQTT::Message message;
 
@@ -107,21 +102,17 @@ int main(int argc, char* argv[])
     while (arrivedcount == 2)
         client.yield(100);
     
-    rc = client.unsubscribe(topic);
-    if (rc != 0) {
+    if ((rc = client.unsubscribe(topic)) != 0)
         printf("rc from unsubscribe was %d\n", rc);
-    }
     
-    rc = client.disconnect();
-    if (rc != 0) {
+    if ((rc = client.disconnect()) != 0)
         printf("rc from disconnect was %d\n", rc);
-    }
     
     ipstack.disconnect();
     
     lcd.cls();
     lcd.locate(0,3);
-    lcd.printf("Finish: %d msgs\n", arrivedcount);
+    lcd.printf("Version %.2f: finish %d msgs\n", version, arrivedcount);
     printf("Finishing with %d messages received\n", arrivedcount);
     
     return 0;
