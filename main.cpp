@@ -34,21 +34,22 @@ C12832 lcd(p5, p7, p6, p8, p11);
 int arrivedcount = 0;
 
 
-void messageArrived(MQTT::Message* message)
+void messageArrived(MQTT::MessageData& md)
 {
+    MQTT::Message &message = md.message;
     lcd.cls();
     lcd.locate(0,3);
-    printf("Message arrived: qos %d, retained %d, dup %d, packetid %d\n", message->qos, message->retained, message->dup, message->id);
-    printf("Payload %.*s\n", message->payloadlen, (char*)message->payload);
+    printf("Message arrived: qos %d, retained %d, dup %d, packetid %d\n", message.qos, message.retained, message.dup, message.id);
+    printf("Payload %.*s\n", message.payloadlen, (char*)message.payload);
     ++arrivedcount;
-    lcd.puts((char*)message->payload);
+    lcd.puts((char*)message.payload);
 }
 
 
 int main(int argc, char* argv[])
 {   
     MQTTEthernet ipstack = MQTTEthernet();
-    float version = 0.46;
+    float version = 0.47;
     char* topic = "mbed-sample";
     
     lcd.printf("Version is %f\n", version);
