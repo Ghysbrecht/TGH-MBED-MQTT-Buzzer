@@ -69,7 +69,7 @@ int main(int argc, char* argv[])
     data.clientID.cstring = "mbed-sample";
     data.username.cstring = "testuser";
     data.password.cstring = "testpassword";
-    if ((rc = client.connect(&data)) != 0)
+    if ((rc = client.connect(data)) != 0)
         lcd.printf("rc from MQTT connect is %d\n", rc);
     
     if ((rc = client.subscribe(topic, MQTT::QOS1, messageArrived)) != 0)
@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
     message.dup = false;
     message.payload = (void*)buf;
     message.payloadlen = strlen(buf)+1;
-    rc = client.publish(topic, &message);
+    rc = client.publish(topic, message);
     while (arrivedcount < 1)
         client.yield(100);
         
@@ -93,7 +93,7 @@ int main(int argc, char* argv[])
     sprintf(buf, "Hello World!  QoS 1 message from app version %f\n", version);
     message.qos = MQTT::QOS1;
     message.payloadlen = strlen(buf)+1;
-    rc = client.publish(topic, &message);
+    rc = client.publish(topic, message);
     while (arrivedcount < 2)
         client.yield(100);
         
@@ -101,7 +101,7 @@ int main(int argc, char* argv[])
     sprintf(buf, "Hello World!  QoS 2 message from app version %f\n", version);
     message.qos = MQTT::QOS2;
     message.payloadlen = strlen(buf)+1;
-    rc = client.publish(topic, &message);
+    rc = client.publish(topic, message);
     while (arrivedcount < 3)
         client.yield(100);
         
@@ -111,7 +111,7 @@ int main(int argc, char* argv[])
         sprintf(buf, "Hello World!  QoS 2 message number %d from app version %f\n", i, version);
         message.qos = MQTT::QOS2;
         message.payloadlen = strlen(buf)+1;
-        rc = client.publish(topic, &message);
+        rc = client.publish(topic, message);
         while (arrivedcount < i + 3)
             client.yield(100);
     }
