@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2014 IBM Corp.
+ * Copyright (c) 2014, 2015 IBM Corp.
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -12,6 +12,7 @@
  *
  * Contributors:
  *    Ian Craggs - initial API and implementation and/or initial documentation
+ *    Ian Craggs - make sure QoS2 processing works, and add device headers
  *******************************************************************************/
  
  /**
@@ -24,9 +25,20 @@
  
  */
 
-
 #include "C12832.h"
-C12832 lcd(p5, p7, p6, p8, p11);
+
+#if defined(TARGET_UBLOX_C027)
+#warning "Compiling for mbed C027"
+#include "C027.h"
+#elif defined(TARGET_LPC1768)
+#warning "Compiling for mbed LPC1768"
+#include "LPC1768.h"
+#elif defined(TARGET_K64F)
+#warning "Compiling for mbed K64F"
+#include "K64F.h"
+#endif
+
+#define MQTTCLIENT_QOS2 1
 
 #include "MQTTEthernet.h"
 #include "MQTTClient.h"
@@ -37,11 +49,10 @@ int arrivedcount = 0;
 void messageArrived(MQTT::MessageData& md)
 {
     MQTT::Message &message = md.message;
-    lcd.cls();
-    lcd.locate(0,3);
     printf("Message arrived: qos %d, retained %d, dup %d, packetid %d\n", message.qos, message.retained, message.dup, message.id);
     printf("Payload %.*s\n", message.payloadlen, (char*)message.payload);
     ++arrivedcount;
+    lcd.cls();
     lcd.puts((char*)message.payload);
 }
 
@@ -49,20 +60,24 @@ void messageArrived(MQTT::MessageData& md)
 int main(int argc, char* argv[])
 {   
     MQTTEthernet ipstack = MQTTEthernet();
-    float version = 0.47;
+    float version = 0.5;
     char* topic = "mbed-sample";
     
-    lcd.printf("Version is %f\n", version);
-    printf("Version is %f\n", version);
+    lcd.cls();
+    lcd.printf("HelloMQTT: version is %f\n", version);
               
     MQTT::Client<MQTTEthernet, Countdown> client = MQTT::Client<MQTTEthernet, Countdown>(ipstack);
     
     char* hostname = "m2m.eclipse.org";
     int port = 1883;
+    lcd.cls();
     lcd.printf("Connecting to %s:%d\n", hostname, port);
     int rc = ipstack.connect(hostname, port);
     if (rc != 0)
+    {
+        lcd.cls(); 
         lcd.printf("rc from TCP connect is %d\n", rc);
+    }
  
     MQTTPacket_connectData data = MQTTPacket_connectData_initializer;       
     data.MQTTVersion = 3;
@@ -70,10 +85,16 @@ int main(int argc, char* argv[])
     data.username.cstring = "testuser";
     data.password.cstring = "testpassword";
     if ((rc = client.connect(data)) != 0)
+    {
+        lcd.cls();
         lcd.printf("rc from MQTT connect is %d\n", rc);
+    }
     
     if ((rc = client.subscribe(topic, MQTT::QOS1, messageArrived)) != 0)
+    {
+        lcd.cls();
         lcd.printf("rc from MQTT subscribe is %d\n", rc);
+    }
 
     MQTT::Message message;
 
@@ -104,30 +125,23 @@ int main(int argc, char* argv[])
     rc = client.publish(topic, message);
     while (arrivedcount < 3)
         client.yield(100);
-        
-    // n * QoS 2
-    for (int i = 1; i <= 10; ++i)
+            
+    if ((rc = client.unsubscribe(topic)) != 0)
     {
-        sprintf(buf, "Hello World!  QoS 2 message number %d from app version %f\n", i, version);
-        message.qos = MQTT::QOS2;
-        message.payloadlen = strlen(buf)+1;
-        rc = client.publish(topic, message);
-        while (arrivedcount < i + 3)
-            client.yield(100);
+        lcd.cls();
+        lcd.printf("rc from unsubscribe was %d\n", rc);
     }
     
-    if ((rc = client.unsubscribe(topic)) != 0)
-        printf("rc from unsubscribe was %d\n", rc);
-    
     if ((rc = client.disconnect()) != 0)
-        printf("rc from disconnect was %d\n", rc);
+    {
+        lcd.cls();
+        lcd.printf("rc from disconnect was %d\n", rc);
+    }
     
     ipstack.disconnect();
     
     lcd.cls();
-    lcd.locate(0,3);
     lcd.printf("Version %.2f: finish %d msgs\n", version, arrivedcount);
-    printf("Finishing with %d messages received\n", arrivedcount);
     
     return 0;
 }
