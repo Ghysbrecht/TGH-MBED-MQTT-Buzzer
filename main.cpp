@@ -24,7 +24,11 @@
   system libraries.
  
  */
+ 
+ // change this to 0 to output messages to serial instead of LCD
+#define USE_LCD 1
 
+#if USE_LCD
 #include "C12832.h"
 
 #if defined(TARGET_UBLOX_C027)
@@ -36,6 +40,10 @@
 #elif defined(TARGET_K64F)
 #warning "Compiling for mbed K64F"
 #include "K64F.h"
+#endif
+
+#define printf lcd.cls();lcd.printf
+
 #endif
 
 #define MQTTCLIENT_QOS2 1
@@ -52,8 +60,6 @@ void messageArrived(MQTT::MessageData& md)
     printf("Message arrived: qos %d, retained %d, dup %d, packetid %d\n", message.qos, message.retained, message.dup, message.id);
     printf("Payload %.*s\n", message.payloadlen, (char*)message.payload);
     ++arrivedcount;
-    lcd.cls();
-    lcd.puts((char*)message.payload);
 }
 
 
@@ -63,21 +69,16 @@ int main(int argc, char* argv[])
     float version = 0.5;
     char* topic = "mbed-sample";
     
-    lcd.cls();
-    lcd.printf("HelloMQTT: version is %f\n", version);
+    printf("HelloMQTT: version is %f\n", version);
               
     MQTT::Client<MQTTEthernet, Countdown> client = MQTT::Client<MQTTEthernet, Countdown>(ipstack);
     
     char* hostname = "m2m.eclipse.org";
     int port = 1883;
-    lcd.cls();
-    lcd.printf("Connecting to %s:%d\n", hostname, port);
+    printf("Connecting to %s:%d\n", hostname, port);
     int rc = ipstack.connect(hostname, port);
     if (rc != 0)
-    {
-        lcd.cls(); 
-        lcd.printf("rc from TCP connect is %d\n", rc);
-    }
+        printf("rc from TCP connect is %d\n", rc);
  
     MQTTPacket_connectData data = MQTTPacket_connectData_initializer;       
     data.MQTTVersion = 3;
@@ -85,16 +86,10 @@ int main(int argc, char* argv[])
     data.username.cstring = "testuser";
     data.password.cstring = "testpassword";
     if ((rc = client.connect(data)) != 0)
-    {
-        lcd.cls();
-        lcd.printf("rc from MQTT connect is %d\n", rc);
-    }
+        printf("rc from MQTT connect is %d\n", rc);
     
     if ((rc = client.subscribe(topic, MQTT::QOS1, messageArrived)) != 0)
-    {
-        lcd.cls();
-        lcd.printf("rc from MQTT subscribe is %d\n", rc);
-    }
+        printf("rc from MQTT subscribe is %d\n", rc);
 
     MQTT::Message message;
 
@@ -129,19 +124,18 @@ int main(int argc, char* argv[])
     if ((rc = client.unsubscribe(topic)) != 0)
     {
         lcd.cls();
-        lcd.printf("rc from unsubscribe was %d\n", rc);
+        printf("rc from unsubscribe was %d\n", rc);
     }
     
     if ((rc = client.disconnect()) != 0)
     {
         lcd.cls();
-        lcd.printf("rc from disconnect was %d\n", rc);
+        printf("rc from disconnect was %d\n", rc);
     }
     
     ipstack.disconnect();
     
-    lcd.cls();
-    lcd.printf("Version %.2f: finish %d msgs\n", version, arrivedcount);
+    printf("Version %.2f: finish %d msgs\n", version, arrivedcount);
     
     return 0;
 }
