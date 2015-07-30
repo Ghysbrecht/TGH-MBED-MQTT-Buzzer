@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
     if ((rc = client.connect(data)) != 0)
         printf("rc from MQTT connect is %d\n", rc);
     
-    if ((rc = client.subscribe(topic, MQTT::QOS1, messageArrived)) != 0)
+    if ((rc = client.subscribe(topic, MQTT::QOS2, messageArrived)) != 0)
         printf("rc from MQTT subscribe is %d\n", rc);
 
     MQTT::Message message;
@@ -122,16 +122,10 @@ int main(int argc, char* argv[])
         client.yield(100);
             
     if ((rc = client.unsubscribe(topic)) != 0)
-    {
-        lcd.cls();
         printf("rc from unsubscribe was %d\n", rc);
-    }
     
     if ((rc = client.disconnect()) != 0)
-    {
-        lcd.cls();
         printf("rc from disconnect was %d\n", rc);
-    }
     
     ipstack.disconnect();
     
