@@ -25,8 +25,8 @@
 
  */
 
- // change this to 0 to output messages to serial instead of LCD
-#define USE_LCD 1
+ // change this to 1 to output messages to LCD instead of serial
+#define USE_LCD 0
 
 #if USE_LCD
 #include "C12832.h"
@@ -75,7 +75,7 @@ int main(int argc, char* argv[])
 
     MQTTNetwork mqttNetwork(network);
 
-    MQTT::Client<MQTTNetwork, Countdown> client = MQTT::Client<MQTTNetwork, Countdown>(mqttNetwork);
+    MQTT::Client<MQTTNetwork, Countdown> client(mqttNetwork);
 
     const char* hostname = "m2m.eclipse.org";
     int port = 1883;

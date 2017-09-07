@@ -26,8 +26,8 @@ public:
         return socket->connect(hostname, port);
     }
 
-    void disconnect() {
-
+    int disconnect() {
+        return socket->close();
     }
 
 private:
